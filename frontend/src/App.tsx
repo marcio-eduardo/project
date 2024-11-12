@@ -1,7 +1,7 @@
 import './global.css'
 
 import { RouterProvider } from 'react-router-dom'
-import { router } from './routes'
+import { AppRouter } from '@/routes/app.routes'
 import { Helmet, HelmetProvider } from 'react-helmet-async'
 import { Footer } from './components/footer'
 
@@ -11,7 +11,7 @@ export function App() {
     <HelmetProvider>
       <Helmet />
       
-      <RouterProvider router={router} />
+      <RouterProvider router={AppRouter} />
       <Footer />
     </HelmetProvider>
   )    

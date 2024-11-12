@@ -1,22 +1,23 @@
 import { createBrowserRouter } from 'react-router-dom';
 //import { Dashboard } from './pages/app/dashboard';
-import { Login } from './pages/auth/login';
+import { Login } from '../pages/auth/login';
 
-import { AuthLayout } from './pages/_layouts/auth';
+import { AuthLayout } from '../pages/_layouts/auth';
 
-import { Homepage } from './pages/app/homepage';
-import { RegisterLayout } from './pages/_layouts/register';
-import Register from './pages/app/register';
-import { ServiceRegisterLayout } from './pages/_layouts/service-register';
-import ServiceRegister from './pages/app/service-register';
-import { PatientRegisterLayout } from './pages/_layouts/patient-register';
-import PatientRegister from './pages/app/patient-register';
-import { EmployeeRegisterLayout } from './pages/_layouts/employee-register';
-import EmployeeRegister from './pages/app/employee-register';
-import { HomeLayout } from './pages/_layouts/home';
+import { Homepage } from '../pages/app/homepage';
+import { SignUpLayout } from '../pages/_layouts/signup';
+
+import { ServiceRegisterLayout } from '../pages/_layouts/service-register';
+import ServiceRegister from '../pages/app/service-register';
+import { PatientRegisterLayout } from '../pages/_layouts/patient-register';
+import PatientRegister from '../pages/app/patient-register';
+import { EmployeeRegisterLayout } from '../pages/_layouts/employee-register';
+import EmployeeRegister from '../pages/app/employee-register';
+import { HomeLayout } from '../pages/_layouts/home';
+import { SignUp } from '../pages/app/signup';
 
 
-export const router = createBrowserRouter([
+export const AppRouter = createBrowserRouter([
   { 
     path: '/login', 
     element: <AuthLayout />, 
@@ -33,9 +34,9 @@ export const router = createBrowserRouter([
   },
   { 
     path: '/register',
-    element: <RegisterLayout />, 
+    element: <SignUpLayout />, 
     children: [
-      { path: '/register', element: <Register /> }
+      { path: '/register', element: <SignUp /> }
     ]
   },
   { 

@@ -7,12 +7,12 @@ const Header: React.FC = () => {
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
 
   // Variável para armazenar o nome do usuário
-  const [userName, setUserName] = useState('João Silva'); // Exemplo de nome
+  const [userName] = useState('João Silva'); // Exemplo de nome
 
-  // Referências para os menus
-  const registrarMenuRef = useRef(null);
-  const servicosMenuRef = useRef(null);
-  const userMenuRef = useRef(null);
+  // Referências para os menus com tipos explícitos
+  const registrarMenuRef = useRef<HTMLDivElement>(null);
+  const servicosMenuRef = useRef<HTMLDivElement>(null);
+  const userMenuRef = useRef<HTMLDivElement>(null);
 
   // Função para fechar os menus quando clicar fora
   const handleClickOutside = (event: MouseEvent) => {
@@ -57,7 +57,7 @@ const Header: React.FC = () => {
       <div className="flex max-w-7xl mx-auto flex items-center justify-between">
         {/* Home / Dentalis */}
         <div className="text-2xl font-semibold">
-        <a href="/" className="block px-4 py-2 hover:bg-gray-100">Dentalis</a>
+          <a href="/" className="block px-4 py-2 hover:bg-gray-100">Dentalis</a>
         </div>
 
         {/* Menu Principal */}
