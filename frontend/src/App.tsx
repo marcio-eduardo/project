@@ -9,9 +9,8 @@ import { Footer } from './components/footer'
 export function App() {
   return (
     <HelmetProvider>
-      <Helmet />
-      
-      <RouterProvider router={AppRouter} />
+      <Helmet />      
+        <RouterProvider router={AppRouter} />
       <Footer />
     </HelmetProvider>
   )    
