@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-//import { Link } from 'react-router-dom'
+import { useState } from 'react'; 
+import { api } from '@/lib/axios';// Biblioteca para requisições HTTP
 
 // Função para validar o e-mail
 const validateEmail = (email: string): boolean => {
@@ -19,7 +19,6 @@ const validateAndFormatCPF = (cpf: string): string => {
 
 // Função para validar e formatar o telefone (formato (XX) XXXXX-XXXX)
 const validateAndFormatPhone = (phone: string): string => {
-  // Verifica se o telefone tem 11 dígitos, sem parênteses ou espaços
   const phoneRegex = /^\d{11}$/;
   if (phoneRegex.test(phone)) {
     // Formatar telefone como (XX) XXXXX-XXXX
@@ -45,7 +44,7 @@ interface Errors {
   endereco: string;
 }
 
-const PatientRegister: React.FC = () => {
+export function PatientRegister() {
   const [formData, setFormData] = useState<FormData>({
     nome: '',
     email: '',
@@ -62,6 +61,10 @@ const PatientRegister: React.FC = () => {
     endereco: '',
   });
 
+  const [successMessage, setSuccessMessage] = useState('');
+  const [errorMessage, setErrorMessage] = useState('');
+  const [loading, setLoading] = useState(false);
+
   // Função para lidar com as mudanças nos campos do formulário
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
@@ -69,7 +72,7 @@ const PatientRegister: React.FC = () => {
   };
 
   // Função para lidar com o envio do formulário
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
     let valid = true;
@@ -81,10 +84,10 @@ const PatientRegister: React.FC = () => {
       endereco: '',
     };
 
-    // Validação do nome (máximo de 20 caracteres)
-    if (formData.nome.length > 20) {
+    // Validação do nome (máximo de 50 caracteres)
+    if (formData.nome.length > 50) {
       valid = false;
-      newErrors.nome = 'Nome não pode ter mais de 20 caracteres';
+      newErrors.nome = 'Nome não pode ter mais de 50 caracteres';
     }
 
     // Validação do email
@@ -119,15 +122,42 @@ const PatientRegister: React.FC = () => {
 
     setErrors(newErrors);
 
-    if (valid) {
-      alert('Cadastro de paciente realizado com sucesso!');
-      // Aqui você pode enviar os dados para um servidor ou fazer outras ações necessárias
+    if (!valid) {
+      return;
+    }
+
+    setLoading(true);
+    setSuccessMessage('');
+    setErrorMessage('');
+
+    try {
+      // Enviar os dados ao backend
+      const response = await api.post('/patients', formData);
+      setSuccessMessage('Paciente cadastrado com sucesso!');
+      console.log('Resposta do backend:', response.data);
+
+      // Limpar formulário após sucesso
+      setFormData({
+        nome: '',
+        email: '',
+        cpf: '',
+        telefone: '',
+        endereco: '',
+      });
+    } catch (error) {
+      console.error('Erro ao cadastrar paciente:', error);
+      setErrorMessage('Erro ao cadastrar paciente. Tente novamente mais tarde.');
+    } finally {
+      setLoading(false);
     }
   };
 
   return (
     <div className="w-full max-w-lg p-6 bg-white rounded-lg shadow-lg">
       <h2 className="text-2xl font-bold text-center mb-6 text-gray-800">Cadastro de Paciente</h2>
+
+      {successMessage && <p className="text-green-500 text-center">{successMessage}</p>}
+      {errorMessage && <p className="text-red-500 text-center">{errorMessage}</p>}
 
       <form onSubmit={handleSubmit} className="space-y-4">
         {/* Nome */}
@@ -215,13 +245,12 @@ const PatientRegister: React.FC = () => {
         {/* Botão de Enviar */}
         <button
           type="submit"
+          disabled={loading}
           className="w-full bg-blue-500 text-white font-semibold py-2 rounded-md hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50"
         >
-          Cadastrar Paciente
+          {loading ? 'Cadastrando...' : 'Cadastrar Paciente'}
         </button>
       </form>
     </div>
   );
-};
-
-export default PatientRegister;
+}

@@ -1,4 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
+import logo from "@/assets/logo-small.png"
+import { Link } from 'react-router-dom';
 
 // Componente Header
 const Header: React.FC = () => {
@@ -53,79 +55,95 @@ const Header: React.FC = () => {
   };
 
   return (
+    
     <header className="bg-blue-600 text-white p-4">
-      <div className="flex max-w-7xl mx-auto flex items-center justify-between">
+  <nav className="flex justify-center items-center">
+    <div className="flex max-w-7xl w-full mx-auto items-center justify-between">
+      {/* Esquerda: Dentalis + Menus */}
+      <div className="flex items-center gap-6">
         {/* Home / Dentalis */}
-        <div className="text-2xl font-semibold">
-          <a href="/" className="block px-4 py-2 hover:bg-gray-100">Dentalis</a>
+        <div className="flex items-center text-2xl font-semibold">
+          <img src={logo} alt="Logo" className="h-12 w-12" />
+          <Link to="/homepage" className="block px-4 py-2">
+            <h1 className="text-blue-100 hover:text-blue-900 text-3xl">Dentalis</h1>
+          </Link>
         </div>
 
-        {/* Menu Principal */}
-        <nav className="flex gap-4">
-          {/* Registrar */}
-          <div className="relative" ref={registrarMenuRef}>
-            <span
-              className="cursor-pointer"
-              onClick={() => handleMenuToggle('registrar')}
-            >
-              Registrar
-            </span>
-            {isRegistrarOpen && (
-              <div className="absolute top-8 left-0 bg-white text-black rounded-md shadow-lg w-48 z-10">
-                <ul className="space-y-2 p-2">
-                  <li><a href="/employee-register" className="block px-4 py-2 hover:bg-gray-100">Novo Colaborador</a></li>
-                  <li><a href="/patient-register" className="block px-4 py-2 hover:bg-gray-100">Novo Paciente</a></li>
-                </ul>
-              </div>
-            )}
-          </div>
-
-          {/* Serviços */}
-          <div className="relative" ref={servicosMenuRef}>
-            <span
-              className="cursor-pointer"
-              onClick={() => handleMenuToggle('servicos')}
-            >
-              Serviços
-            </span>
-            {isServicosOpen && (
-              <div className="absolute top-8 left-0 bg-white text-black rounded-md shadow-lg w-48 z-10">
-                <ul className="space-y-2 p-2">
-                  <li><a href="/service-register" className="block px-4 py-2 hover:bg-gray-100">Serviço</a></li>
-                </ul>
-              </div>
-            )}
-          </div>
-
-          {/* Relatórios */}
-          <span className="cursor-pointer">Relatórios</span>
-        </nav>
-
-        {/* Foto de Usuário com Submenu */}
-        <div className="relative flex items-center" ref={userMenuRef}>
-          {/* Foto do usuário */}
-          <img
-            src="https://randomuser.me/api/portraits/men/4.jpg"
-            alt="Foto do usuário"
-            className="w-12 h-12 rounded-full cursor-pointer"
-            onClick={() => handleMenuToggle('user')}
-          />
-
-          {/* Nome do usuário ao lado da foto */}
-          <span className="ml-2 text-sm font-medium">{userName}</span>
-
-          {isUserMenuOpen && (
-            <div className="absolute top-12 right-0 bg-white text-black rounded-md shadow-lg w-48 z-10">
+        {/* Registrar */}
+        <div className="relative" ref={registrarMenuRef}>
+          <span
+            className="cursor-pointer font-semibold text-xl text-blue-100 hover:text-blue-900"
+            onMouseEnter={() => handleMenuToggle('registrar')}
+            onMouseLeave={() => handleMenuToggle('')}
+          >
+            Registrar
+          </span>
+          {isRegistrarOpen && (
+            <div className="absolute top-8 left-0 bg-white text-black rounded-md shadow-lg w-48 z-10">
               <ul className="space-y-2 p-2">
-                <li><a href="#" className="block px-4 py-2 hover:bg-gray-100">Meu Perfil</a></li>
-                <li><a href="#" className="block px-4 py-2 hover:bg-gray-100">Configurações</a></li>
-                <li><a href="#" className="block px-4 py-2 hover:bg-gray-100">Sair</a></li>
+                <li><a href="/employee-register" className="block px-4 py-2 hover:bg-gray-100">Novo Colaborador</a></li>
+                <li><a href="/patient-register" className="block px-4 py-2 hover:bg-gray-100">Novo Paciente</a></li>
               </ul>
             </div>
           )}
         </div>
+
+        {/* Serviços */}
+        <div className="relative" ref={servicosMenuRef}>
+          <span
+            className="cursor-pointer font-semibold text-xl text-blue-100 hover:text-blue-900"
+            onMouseEnter={() => handleMenuToggle('servicos')}
+            onMouseLeave={() => handleMenuToggle('')}
+          >
+            Serviços
+          </span>
+          {isServicosOpen && (
+            <div className="absolute top-8 left-0 bg-white text-black rounded-md shadow-lg w-48 z-10">
+              <ul className="space-y-2 p-2">
+                <li><a href="/service-register" className="block px-4 py-2 hover:bg-gray-100">Novo Serviço</a></li>
+                <li><a href="/services" className="block px-4 py-2 hover:bg-gray-100">Lista de serviços</a></li>
+                <li><a href="/patient-table" className="block px-4 py-2 hover:bg-gray-100">Lista de Pacientes</a></li>
+                <li><a href="/service-register" className="block px-4 py-2 hover:bg-gray-100">Editar serviços</a></li>
+              </ul>
+            </div>
+          )}
+        </div>
+
+        {/* Relatórios */}
+        <span className="cursor-pointer font-semibold text-xl text-blue-100 hover:text-blue-900">Relatórios</span>
       </div>
-    </header>
+
+      {/* Direita: Usuário */}
+      <div 
+        className="relative flex items-center" 
+        ref={userMenuRef}
+        onClick={() => handleMenuToggle('user')}
+        onMouseLeave={() => handleMenuToggle('')}
+        >
+        
+        {/* Foto do usuário */}
+        <img
+          src="https://randomuser.me/api/portraits/men/4.jpg"
+          alt="Foto do usuário"
+          className="w-12 h-12 rounded-full cursor-pointer hover:ring-2 hover:ring-white"
+          
+        />
+        <span className="ml-2 text-sm font-medium cursor-pointer text-blue-100 hover:text-blue-900">{userName}</span>
+
+        {isUserMenuOpen && (
+          <div className="absolute top-12 right-0 bg-white text-black rounded-md shadow-lg w-48 z-10">
+            <ul className="space-y-2 p-2">
+              <li><a href="#" className="block px-4 py-2 hover:bg-gray-100">Meu Perfil</a></li>
+              <li><a href="#" className="block px-4 py-2 hover:bg-gray-100">Configurações</a></li>
+              <li><a href="#" className="block px-4 py-2 hover:bg-gray-100">Sair</a></li>
+            </ul>
+          </div>
+        )}
+      </div>
+    </div>
+  </nav>
+</header>
+
   );
 };
 

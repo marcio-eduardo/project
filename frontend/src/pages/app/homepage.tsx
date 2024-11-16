@@ -1,12 +1,14 @@
+import imagem3 from "@/assets/003.png"
+
 export function Homepage() {
   return (    
-    <main className="p-5 md:p-20 grid grid-rows-3 grid-cols-4 gap-6 max-w-screen-xl mx-auto">
-      <div className="flex items-center justify-center p-5 bg-gray-300 rounded-lg col-span-2 row-span-1 text-center">
+    <main className="p-5 md:p-20 grid grid-rows-2 grid-cols-2 gap-4 max-w-screen-xl mx-auto">
+      <div className="flex items-center justify-center bg-gray-300 rounded-lg text-center">
         {/* Imagem de exemplo */}
-        <img className="max-w-[200px] max-h-[200px]" src="" alt="Imagem de uma dentadura" />
+        <img className="w-full h-full object-cover rounded-lg" src={ imagem3 }  alt="Imagem de uma dentadura" />
       </div>
 
-      <div className="bg-cyan-300 p-5 rounded-lg col-span-2 row-span-1">
+      <div className="bg-cyan-300 p-5 rounded-lg ">
         Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod 
         tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim 
         veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea 
@@ -16,7 +18,7 @@ export function Homepage() {
         id est laborum.
       </div>
 
-      <div className="bg-red-200 p-5 rounded-lg col-span-4 row-span-2">
+      <div className="bg-red-200 p-5 rounded-lg col-span-2">
         Lorem ipsum dolor sit amet, consectetur adipiscing elit, 
         sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. 
         Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris 

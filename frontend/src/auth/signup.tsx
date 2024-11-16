@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { api } from "@/services/api";
+import { api } from "@/lib/axios";
 import { useNavigate } from 'react-router-dom';
 
 interface FormData {
@@ -9,6 +9,12 @@ interface FormData {
   confirmPassword: string;
 }
 
+interface NewUserData {
+  name: string;
+  email: string;
+  password: string;
+}
+
 export function SignUp() {
 //const SignUpForm: React.FC = () => { deprecated
   const [formData, setFormData] = useState<FormData>({
@@ -16,6 +22,12 @@ export function SignUp() {
     email: '',
     password: '',
     confirmPassword: '',
+  });
+
+  const [newUserData] = useState<NewUserData>({
+    email: '',
+    name: '',
+    password: '',
   });
 
   const navigate = useNavigate()
@@ -35,12 +47,18 @@ export function SignUp() {
     if (formData.password !== formData.confirmPassword) {
       alert('As senhas não coincidem');
     } else {
+
+      
       // Lógica de envio do formulário (ex: envio para API)
-      api.post("/employees", formData)
+      newUserData.name = formData.name;
+      newUserData.email = formData.email;
+      newUserData.password = formData.password;
+
+      api.post("/users", newUserData)
       .then(() =>{
 
         alert('Formulário enviado com sucesso');
-        navigate("/login")
+        navigate("/signin")
       })
       .catch(error => {
         if (error.response) {
@@ -50,7 +68,7 @@ export function SignUp() {
         }
       })
 
-      console.log(formData);
+      console.log(newUserData);
     }
   };
 

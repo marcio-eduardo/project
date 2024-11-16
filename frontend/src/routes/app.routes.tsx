@@ -1,59 +1,49 @@
 import { createBrowserRouter } from 'react-router-dom';
-import { Login } from '../pages/auth/login';
-import { AuthLayout } from '../pages/_layouts/auth';
 import { Homepage } from '../pages/app/homepage';
-import { SignUpLayout } from '../pages/_layouts/signup';
-import { ServiceRegisterLayout } from '../pages/_layouts/service-register';
-import ServiceRegister from '../pages/app/service-register';
-import { PatientRegisterLayout } from '../pages/_layouts/patient-register';
-import PatientRegister from '../pages/app/patient-register';
-import { EmployeeRegisterLayout } from '../pages/_layouts/employee-register';
-import EmployeeRegister from '../pages/app/employee-register';
 import { HomeLayout } from '../pages/_layouts/home';
-import { SignUp } from '../pages/app/signup';
-
+import { ServiceRegisterLayout } from '../pages/_layouts/service-register';
+import { ServiceRegister } from '../pages/app/service-register';
+import { PatientRegister } from '../pages/app/patient-register';
+import EmployeeRegister from '../pages/app/employee-register';
+import { SignUp } from '@/auth/signup';
+import { AuthLayout } from '@/pages/_layouts/signIn';
+import { SignIn } from '@/auth/signIn';
+import { Dashboard } from '@/pages/app/dashboard'
+import { ServicesList } from '@/pages/app/services';
+import { PatientsTable } from '@/pages/app/patient-table';
 
 export const AppRouter = createBrowserRouter([
+  
+  /*---------- SignIn ----------*/
   { 
-    path: '/login', 
+    path: '/', 
     element: <AuthLayout />, 
     children: [
-      { path: '/login', element: <Login /> }
-    ]
+      { path: '/signin', element: <SignIn /> },
+      { path: '/signup', element: <SignUp />}
+    ],  
   },
+  /*---------- Home ----------*/
   { 
     path: '/',
     element: <HomeLayout />, 
     children: [
-      { path: '/', element: <Homepage /> }
+      { path: '/homepage', element: <Homepage /> },
+      
     ]
   },
+  /*---------- Service-register ----------*/
   { 
-    path: '/register',
-    element: <SignUpLayout />, 
-    children: [
-      { path: '/register', element: <SignUp /> }
-    ]
-  },
-  { 
-    path: '/service-register',
+    path: '/',
     element: <ServiceRegisterLayout />, 
     children: [
+      { path: '/dashboard', element: <Dashboard />},
       { path: '/service-register', element: <ServiceRegister /> },
+      { path: '/employee-register', element: <EmployeeRegister /> },
+      { path: '/patient-register', element: <PatientRegister /> },
+      { path: '/patient-table', element: <PatientsTable />},
+      { path: '/services', element: <ServicesList /> },
     ]
-  },
-  { 
-    path: '/patient-register',
-    element: <PatientRegisterLayout />, 
-    children: [
-      { path: '/patient-register', element: <PatientRegister /> }
-    ]
-  },
-  { 
-    path: '/employee-register',
-    element: <EmployeeRegisterLayout />, 
-    children: [
-      { path: '/employee-register', element: <EmployeeRegister /> }
-    ]
-  },
-])
+  },  
+],
+)
