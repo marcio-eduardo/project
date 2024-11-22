@@ -6,23 +6,16 @@ import { Helmet, HelmetProvider } from 'react-helmet-async'
 import { Footer } from './components/footer'
 import { QueryClientProvider } from '@tanstack/react-query'
 import { queryClient } from './lib/react-query'
+import { Toaster } from 'sonner'
 
-interface FutureConfig { 
-  v7_startTransition?: boolean; 
-  v7_normalizeFormMethod?: boolean;
-}
-export function App() {
 
-  const futureConfig: FutureConfig = { 
-    v7_startTransition: true, 
-    v7_normalizeFormMethod: true, 
-  };
-
+ export function App() {
   return (
     <HelmetProvider>
-      <Helmet /> 
+      <Helmet  titleTemplate='%s | Dentalis'/> 
       <QueryClientProvider client={queryClient}>
-        <RouterProvider router={AppRouter} future={futureConfig} />  
+        <Toaster richColors />
+        <RouterProvider router={AppRouter} />  
       </QueryClientProvider>     
       <Footer />
     </HelmetProvider>

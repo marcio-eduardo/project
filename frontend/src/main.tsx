@@ -7,10 +7,8 @@ import { App } from './app.tsx'
 //import { MyContext } from './hooks/auth.tsx'
 
 createRoot(document.getElementById('root')!).render(
-  
-  <StrictMode>
-    
-      <App />
-      
+ 
+  <StrictMode>   
+      <App />     
   </StrictMode>,
 )

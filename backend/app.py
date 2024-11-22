@@ -1,15 +1,21 @@
 from flask import Flask, jsonify, request
+import functools
+from flask_cors import CORS
+from flask_jwt_extended import get_jwt, JWTManager, create_access_token, jwt_required, get_jwt_identity
 from pymongo import MongoClient
 from bson.objectid import ObjectId
-from flask_cors import CORS
-from datetime import datetime  # Importando para manipular datas
-from werkzeug.security import generate_password_hash, check_password_hash
 from bson.errors import InvalidId
+from werkzeug.security import generate_password_hash, check_password_hash
+import datetime  # Para manipular datas
+from dotenv import load_dotenv
+import os
 
-
+# Carregar as variáveis de ambiente do arquivo .env
+load_dotenv()
 
 app = Flask(__name__)
-CORS(app, origins=["http://localhost:3000"])  # Habilita o CORS para permitir requisições do frontend
+#CORS(app, origins=["http://localhost:3000"])  # Habilita o CORS para permitir requisições do frontend
+CORS(app, resources={r"/*": {"origins": "*"}})  # Permite requisições de qualquer origem
 
 client = MongoClient('mongodb://mongo:27017/')
 db = client.ongdb  # Conecta ao banco de dados chamado "ongdb"
@@ -22,9 +28,27 @@ services_collection = db.services  # Coleção de serviços
 # Taxa de comissão (exemplo de 10% do valor do serviço)
 COMMISSION_RATE = 0.10
 
+# Configuração do Flask para o JWT
+app.config['JWT_SECRET_KEY'] = os.getenv('SECRET_KEY')  # Chave secreta para o JWT
+
+# Inicializando o JWTManager com a instância da aplicação
+jwt = JWTManager(app)
+
 #------------- USUÁRIOS --------------
 
-# Rota para adicionar um novo usuário
+# Middleware para verificar nível de acesso
+def admin_required(fn):
+    @functools.wraps(fn)  # Preserva o nome da função original
+    @jwt_required()
+    def wrapper(*args, **kwargs):
+        current_user = get_jwt_identity()
+        user = users_collection.find_one({"_id": ObjectId(current_user)})
+        if user and user.get('tipo') == 'admin':
+            return fn(*args, **kwargs)
+        return jsonify({"error": "Acesso negado. Apenas administradores têm permissão."}), 403
+    return wrapper
+
+# Rota para adicionar um novo usuário (não requer autenticação)
 @app.route('/users', methods=['POST'])
 def add_user():
     data = request.get_json()
@@ -33,45 +57,62 @@ def add_user():
         "name": data['name'],
         "email": data['email'],
         "password": hashed_password,
-        "tipo": data.get('tipo', 'comum')  # Define o tipo de usuário, 'admin' ou 'comum'
+        "tipo": data.get('tipo', 'comum')  # Define o tipo de usuário, padrão é 'comum'
     }
     result = users_collection.insert_one(new_user)
     return jsonify({"message": "Usuário adicionado com sucesso", "id": str(result.inserted_id)}), 201
 
-# Rota para listar todos os usuários
-@app.route('/users', methods=['GET'])
+# Rota para criar um novo usuário administrador (somente administradores podem acessar)
+@app.route('/users/admin', methods=['POST'], endpoint='add_admin_user')
+@admin_required
+def add_admin():
+    data = request.get_json()
+    hashed_password = generate_password_hash(data['password'])
+    new_admin = {
+        "name": data['name'],
+        "email": data['email'],
+        "password": hashed_password,
+        "tipo": "admin"
+    }
+    result = users_collection.insert_one(new_admin)
+    return jsonify({"message": "Administrador criado com sucesso", "id": str(result.inserted_id)}), 201
+
+# Rota para listar todos os usuários (somente administradores podem acessar)
+@app.route('/users', methods=['GET'], endpoint='list_users')
+@admin_required
 def get_users():
     users = list(users_collection.find({}))
     for user in users:
         user['_id'] = str(user['_id'])
-    return jsonify(users), 200    
+    return jsonify(users), 200
 
-# Rota para visualizar detalhes de um usuário específico
-@app.route('/users/<user_id>', methods=['GET'])
+# Rota para visualizar detalhes de um usuário específico (requer autenticação)
+@app.route('/users/<user_id>', methods=['GET'], endpoint='view_user')
+@jwt_required()
 def get_user(user_id):
+    current_user = get_jwt_identity()
     user = users_collection.find_one({"_id": ObjectId(user_id)})
     if user:
         user['_id'] = str(user['_id'])
         return jsonify(user), 200
     return jsonify({"error": "Usuário não encontrado"}), 404
-    
-# Rota para atualizar um usuário
-@app.route('/users/<user_id>', methods=['PUT'])
+
+# Rota para atualizar um usuário (somente administradores podem acessar)
+@app.route('/users/<user_id>', methods=['PUT'], endpoint='update_user')
+@admin_required
 def update_user(user_id):
     data = request.get_json()
     updated_data = {}
 
-    # Verifica e atualiza apenas os campos fornecidos no JSON
-    if 'nome' in data:
-        updated_data['nome'] = data['nome']
+    if 'name' in data:
+        updated_data['name'] = data['name']
     if 'email' in data:
         updated_data['email'] = data['email']
     if 'password' in data:
         updated_data['password'] = generate_password_hash(data['password'])
     if 'tipo' in data:
-        updated_data['tipo'] = data['tipo']  # Atualiza o tipo do usuário, se fornecido
+        updated_data['tipo'] = data['tipo']
 
-    # Verifica se existe algum campo para atualizar
     if updated_data:
         result = users_collection.update_one({"_id": ObjectId(user_id)}, {"$set": updated_data})
         if result.modified_count > 0:
@@ -81,25 +122,120 @@ def update_user(user_id):
     else:
         return jsonify({"error": "Nenhum dado fornecido para atualização"}), 400
 
- # Rota para deletar um usuário
-@app.route('/users/<user_id>', methods=['DELETE'])
+# Rota para deletar um usuário (somente administradores podem acessar)
+@app.route('/users/<user_id>', methods=['DELETE'], endpoint='delete_user')
+@admin_required
 def delete_user(user_id):
     result = users_collection.delete_one({"_id": ObjectId(user_id)})
     if result.deleted_count > 0:
         return jsonify({"message": "Usuário deletado com sucesso"}), 200
-    return jsonify({"error": "Usuário não encontrado"}), 404   
+    return jsonify({"error": "Usuário não encontrado"}), 404
 
-
-#------------- LOGIN -----------------
-
-# Rota de login para verificar credenciais
+# Rota de login
 @app.route('/login', methods=['POST'])
 def login():
     data = request.get_json()
     user = users_collection.find_one({"email": data['email']})
+
     if user and check_password_hash(user['password'], data['password']):
-        return jsonify({"message": "Login bem-sucedido", "tipo": user['tipo']}), 200
+        token = create_access_token(identity=str(user['_id']))
+        return jsonify({"token": token, "tipo": user['tipo']}), 200
+
     return jsonify({"error": "Credenciais inválidas"}), 401
+
+    
+# Definição da BLOCKLIST
+BLOCKLIST = set()
+
+# Rota de logout
+@app.route('/logout', methods=['POST'])
+@jwt_required()
+def logout():
+    jti = get_jwt()["jti"]  # Pega o ID do token atual
+    BLOCKLIST.add(jti)      # Adiciona o token à blocklist
+    return jsonify(msg="Logout realizado com sucesso"), 200
+
+# Callback para verificar se o token está na blocklist
+@jwt.token_in_blocklist_loader
+def check_if_token_in_blocklist(jwt_header, jwt_payload):
+    return jwt_payload["jti"] in BLOCKLIST
+
+# # Rota para adicionar um novo usuário
+# @app.route('/users', methods=['POST'])
+# def add_user():
+#     data = request.get_json()
+#     hashed_password = generate_password_hash(data['password'])
+#     new_user = {
+#         "name": data['name'],
+#         "email": data['email'],
+#         "password": hashed_password,
+#         "tipo": data.get('tipo', 'comum')  # Define o tipo de usuário, 'admin' ou 'comum'
+#     }
+#     result = users_collection.insert_one(new_user)
+#     return jsonify({"message": "Usuário adicionado com sucesso", "id": str(result.inserted_id)}), 201
+
+# # Rota para listar todos os usuários
+# @app.route('/users', methods=['GET'])
+# def get_users():
+#     users = list(users_collection.find({}))
+#     for user in users:
+#         user['_id'] = str(user['_id'])
+#     return jsonify(users), 200    
+
+# # Rota para visualizar detalhes de um usuário específico
+# @app.route('/users/<user_id>', methods=['GET'])
+# def get_user(user_id):
+#     user = users_collection.find_one({"_id": ObjectId(user_id)})
+#     if user:
+#         user['_id'] = str(user['_id'])
+#         return jsonify(user), 200
+#     return jsonify({"error": "Usuário não encontrado"}), 404
+    
+# # Rota para atualizar um usuário
+# @app.route('/users/<user_id>', methods=['PUT'])
+# def update_user(user_id):
+#     data = request.get_json()
+#     updated_data = {}
+
+#     # Verifica e atualiza apenas os campos fornecidos no JSON
+#     if 'nome' in data:
+#         updated_data['nome'] = data['nome']
+#     if 'email' in data:
+#         updated_data['email'] = data['email']
+#     if 'password' in data:
+#         updated_data['password'] = generate_password_hash(data['password'])
+#     if 'tipo' in data:
+#         updated_data['tipo'] = data['tipo']  # Atualiza o tipo do usuário, se fornecido
+
+#     # Verifica se existe algum campo para atualizar
+#     if updated_data:
+#         result = users_collection.update_one({"_id": ObjectId(user_id)}, {"$set": updated_data})
+#         if result.modified_count > 0:
+#             return jsonify({"message": "Usuário atualizado com sucesso"}), 200
+#         else:
+#             return jsonify({"message": "Nenhuma modificação realizada"}), 200
+#     else:
+#         return jsonify({"error": "Nenhum dado fornecido para atualização"}), 400
+
+#  # Rota para deletar um usuário
+# @app.route('/users/<user_id>', methods=['DELETE'])
+# def delete_user(user_id):
+#     result = users_collection.delete_one({"_id": ObjectId(user_id)})
+#     if result.deleted_count > 0:
+#         return jsonify({"message": "Usuário deletado com sucesso"}), 200
+#     return jsonify({"error": "Usuário não encontrado"}), 404   
+
+
+# #------------- LOGIN -----------------
+
+# # Rota de login para verificar credenciais
+# @app.route('/login', methods=['POST'])
+# def login():
+#     data = request.get_json()
+#     user = users_collection.find_one({"email": data['email']})
+#     if user and check_password_hash(user['password'], data['password']):
+#         return jsonify({"message": "Login bem-sucedido", "tipo": user['tipo']}), 200
+#     return jsonify({"error": "Credenciais inválidas"}), 401
 
 
 
@@ -491,15 +627,6 @@ def update_report(report_id):
     if result.modified_count > 0:
         return jsonify({"message": "Relatório atualizado com sucesso"}), 200
     return jsonify({"error": "Relatório não encontrado"}), 404  
-
-
-
-
-
-
-
-
-
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000, debug=True)

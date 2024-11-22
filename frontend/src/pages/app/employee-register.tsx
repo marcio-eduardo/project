@@ -53,7 +53,8 @@ interface Errors {
   dataAdmissao: string;
 }
 
-const EmployeeRegister: React.FC = () => {
+
+export function EmployeeRegister() {
   const [formData, setFormData] = useState<FormData>({
     nome: '',
     email: '',
@@ -255,5 +256,3 @@ const EmployeeRegister: React.FC = () => {
     </div>
   );
 };
-
-export default EmployeeRegister;
