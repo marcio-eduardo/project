@@ -1,21 +1,26 @@
 import './global.css'
 
-import { RouterProvider } from 'react-router-dom'
-import { AppRouter } from '@/routes/app.routes'
-import { Helmet, HelmetProvider } from 'react-helmet-async'
-import { Footer } from './components/footer'
 import { QueryClientProvider } from '@tanstack/react-query'
-import { queryClient } from './lib/react-query'
+import { Helmet, HelmetProvider } from 'react-helmet-async'
+import { RouterProvider } from 'react-router-dom'
 import { Toaster } from 'sonner'
+import { UserProvider } from './auth/signInPage'
+import { Footer } from './components/footer'
+import { queryClient } from './lib/react-query'
+import { AppRouter } from './routes/app.routes'
 
+//import { createContext } from 'react'
 
+//export const UserToken = createContext({} as TokenInStorageType)
  export function App() {
   return (
     <HelmetProvider>
       <Helmet  titleTemplate='%s | Dentalis'/> 
       <QueryClientProvider client={queryClient}>
-        <Toaster richColors />
-        <RouterProvider router={AppRouter} />  
+        <Toaster richColors />       
+        <UserProvider>
+          <RouterProvider router={AppRouter} />           
+        </UserProvider>
       </QueryClientProvider>     
       <Footer />
     </HelmetProvider>

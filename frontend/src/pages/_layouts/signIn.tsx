@@ -1,4 +1,4 @@
-import { HeaderLogin } from "@/components/headerLogin";
+import { HeaderLogin } from "@/components/Header/headerLogin";
 import { Outlet } from "react-router-dom";
 
 export function AuthLayout() {
