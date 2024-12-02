@@ -9,7 +9,7 @@ import { Footer } from './components/footer'
 import { queryClient } from './lib/react-query'
 import { AppRouter } from './routes/app.routes'
 
-//import { createContext } from 'react'
+
 
 //export const UserToken = createContext({} as TokenInStorageType)
  export function App() {
@@ -17,10 +17,10 @@ import { AppRouter } from './routes/app.routes'
     <HelmetProvider>
       <Helmet  titleTemplate='%s | Dentalis'/> 
       <QueryClientProvider client={queryClient}>
-        <Toaster richColors />       
-        <UserProvider>
-          <RouterProvider router={AppRouter} />           
-        </UserProvider>
+        <Toaster richColors />
+          <UserProvider>       
+            <RouterProvider router={AppRouter} />                  
+          </UserProvider>
       </QueryClientProvider>     
       <Footer />
     </HelmetProvider>

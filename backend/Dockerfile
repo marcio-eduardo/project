@@ -29,8 +29,8 @@ COPY . .
 # Expõe a porta usada pelo Flask (5000 por padrão)
 EXPOSE 5000
 
-# Define a variável de ambiente para o Flask
-ENV FLASK_RUN_HOST=0.0.0.0
+# # Define a variável de ambiente para o Flask
+# ENV FLASK_RUN_HOST=0.0.0.0
 
 # Comando para iniciar o aplicativo
 CMD ["python", "app.py"]
