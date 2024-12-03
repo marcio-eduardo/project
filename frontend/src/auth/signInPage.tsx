@@ -92,7 +92,7 @@ export function SignInPage() {
         updateUser(response.token, response.tipo); // Atualiza o contexto
 
         toast.success('Usuário autenticado com sucesso!');
-        navigate('/dashboard'); // Redireciona para o dashboard
+        navigate('/service-register'); // Redireciona para o dashboard
       } else {
         toast.error('Erro na autenticação. Dados inválidos recebidos.');
         console.error('Erro na resposta da API:', response);

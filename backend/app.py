@@ -4,6 +4,7 @@ from flask_cors import CORS
 from flask_jwt_extended import get_jwt, JWTManager, create_access_token, jwt_required, get_jwt_identity
 from pymongo import MongoClient, ASCENDING
 from bson.objectid import ObjectId
+from bson import json_util 
 from bson.errors import InvalidId
 from werkzeug.security import generate_password_hash, check_password_hash
 import datetime  # Para manipular datas
@@ -27,6 +28,7 @@ reports_collection = db.reports  # Conecta à coleção "reports"
 users_collection = db.users  # Conecta à coleção "users"
 services_collection = db.services  # Coleção de serviços
 assigned_services_collection = db.assigned_services  # Coleção de serviços atribuídos
+employee_reports_collection = db.employee_reports # Coleção de relatórios dos funcioários
 
 # Configurar o fuso horário local (Brasil - UTC-3)
 brasil_tz = pytz.timezone('America/Sao_Paulo')
@@ -215,7 +217,6 @@ def add_service():
     result = db.services.insert_one(new_service)  # Insere o novo serviço no MongoDB
     return jsonify(str(result.inserted_id)), 201
 
-
 # Rota POST para atribuir um serviço a um funcionário e paciente
 @app.route('/assign_service', methods=['POST'])
 def assign_service():
@@ -256,28 +257,68 @@ def assign_service():
     }
 
     try:
+        # Inserir o serviço atribuído no banco de dados
         assigned_services_collection.insert_one(assigned_service)
+
+        # Atualizar a quantidade de vezes que o serviço foi atribuído ao funcionário
+        employee_report = employee_reports_collection.find_one({"employee_id": ObjectId(employee_id)})
+        if not employee_report:
+            employee_report = {
+                "employee_id": ObjectId(employee_id),
+                "employee_name": employee.get("nome", "Nome não disponível"),
+                "services": {}
+            }
+
+        service_name = service.get("name", "")
+        if service_name not in employee_report["services"]:
+            employee_report["services"][service_name] = {
+                "service_count": 0,
+                "price": service.get("price", 0),
+                "total_revenue": 0,
+                "total_commission": 0
+            }
+
+        employee_report["services"][service_name]["service_count"] += 1
+        employee_report["services"][service_name]["total_revenue"] += service.get("price", 0)
+        employee_report["services"][service_name]["total_commission"] += commission
+
+        # Inserir ou atualizar o relatório do funcionário
+        employee_reports_collection.replace_one(
+            {"employee_id": ObjectId(employee_id)},
+            employee_report,
+            upsert=True
+        )
+
         return jsonify({"message": "Serviço atribuído com sucesso", "comissao": commission}), 200
     except Exception as e:
         return jsonify({"message": f"Erro ao atribuir serviço: {str(e)}"}), 500
+
 
 # Rota para exibir todos os serviços atribuídos
 @app.route('/assign_services', methods=['GET'])
 def fetch_assigned_services():
     try:
+        # Buscando todos os serviços atribuídos no banco de dados
         services = db.assigned_services.find()
         assigned_services = []
+
+        # Iterando sobre os serviços encontrados
         for service in services:
             date = datetime.fromisoformat(service["date"]) if "date" in service else None
+            
             assigned_services.append({
                 "_id": str(service["_id"]),
                 "date": date.strftime("%d/%m/%Y") if date else "Data desconhecida",
                 "employee_name": service["employee_name"],
-                "name": service["name"],
+                "employee_id": str(service["employee_id"]),  # ID do funcionário
+                "name": service["name"],  # Nome do serviço
                 "patient_name": service["patient_name"],
+                "patient_id": str(service["patient_id"]),  # ID do paciente
                 "price": f'R$ {service.get("price", 0):.2f}',
                 "commission": f'R$ {service.get("commission", 0):.2f}'
             })
+        
+        # Retorna os serviços com os IDs dos funcionários e pacientes
         return jsonify(assigned_services), 200
     except Exception as e:
         return jsonify({"message": f"Erro ao buscar serviços atribuídos: {str(e)}"}), 500
@@ -484,7 +525,6 @@ def update_employee(employee_id):
 
 
 # ---------------- RELATÓRIOS ---------------- #
-
 # Função para validar e converter datas no formato "dd/mm/yyyy"
 def validate_and_convert_date(date_str):
     try:
@@ -493,7 +533,6 @@ def validate_and_convert_date(date_str):
         return date_obj
     except ValueError:
         raise ValueError(f"Data no formato inválido: {date_str}")
-
 
 # Rota para criar relatório de serviços
 @app.route('/create_report', methods=['POST'])
@@ -653,47 +692,225 @@ def delete_report(report_id):
         return jsonify({"message": "Relatório deletado com sucesso"}), 200
     return jsonify({"error": "Relatório não encontrado"}), 404
 
-# # Rota para buscar um relatório específico por ID
-# @app.route('/reports/<report_id>', methods=['GET'])
-# def get_report(report_id):
-    report = reports_collection.find_one({"_id": ObjectId(report_id)})
-    if not report:
-        return jsonify({"error": "Relatório não encontrado"}), 404
+# Rota para criar um relatório de desempenho de funcionários
+@app.route('/create_employee_performance_report', methods=['POST'])
+def create_employee_performance_report():
+    data = request.json
+    employee_id_str = data.get("employee_id")
+    start_date_str = data.get("start_date")
+    end_date_str = data.get("end_date")
 
-    report_data = {
-        'id': str(report['_id']),
-        'data_geracao': report.get('data_geracao'),
-        'data_inicio': report.get('data_inicio'),
-        'data_fim': report.get('data_fim'),
-        'total_receita': report.get('total_receita', 0),
-        'comissoes': report.get('comissoes', {}),
-        'servicos': []
+    # Verificar se o ID do funcionário e as datas foram fornecidos
+    if not employee_id_str or not start_date_str or not end_date_str:
+        return jsonify({"message": "O ID do funcionário, as datas de início e fim são obrigatórios"}), 400
+
+    # Validar e converter as datas
+    try:
+        start_date = validate_and_convert_date(start_date_str)
+        end_date = validate_and_convert_date(end_date_str)
+    except ValueError as e:
+        return jsonify({"message": str(e)}), 400
+
+    # Buscar serviços realizados pelo funcionário no intervalo de datas
+    assigned_services = assigned_services_collection.find({
+        "employee_id": ObjectId(employee_id_str),
+        "date": {"$gte": start_date.isoformat(), "$lte": end_date.isoformat()}
+    })
+
+    # Configurar o fuso horário do Brasil (Horário de Brasília - UTC-3)
+    brasil_tz = pytz.timezone('America/Sao_Paulo')
+    # Data de criação (data_geracao) em formato datetime
+    data_geracao = datetime.now(brasil_tz)  # Salvando a data de criação como datetime
+
+    # Subtrai 3 horas de data_geracao
+    data_geracao_minus_3_hours = data_geracao - timedelta(hours=3)
+
+    # Inicializar dados do relatório
+    employee_name = None
+    services_data = {}
+    total_revenue = 0
+    total_commission = 0
+
+    # Agrupar serviços e calcular as estatísticas
+    for service in assigned_services:
+        employee_name = service["employee_name"]
+        service_name = service["name"]
+        price = service["price"]
+        commission = service["commission"]
+
+        # Inicializar dados do serviço
+        if service_name not in services_data:
+            services_data[service_name] = {
+                "service_count": 0,
+                "price": price,
+                "total_revenue": 0,
+                "total_commission": 0
+            }
+
+        # Atualizar os dados do serviço
+        services_data[service_name]["service_count"] += 1
+        services_data[service_name]["total_revenue"] += price
+        services_data[service_name]["total_commission"] += commission
+
+        # Atualizar os totais de receita e comissão
+        total_revenue += price
+        total_commission += commission
+
+    # Preparar o relatório final
+    report = {
+        "employee_id": employee_id_str,
+        "employee_name": employee_name,
+        "start_date": start_date.isoformat(),
+        "end_date": end_date.isoformat(),
+        "data_geracao": data_geracao_minus_3_hours,  # Salvando a data com 3 horas subtraídas no banco
+        "total_revenue": total_revenue,
+        "total_commission": total_commission,
+        "services": []
     }
 
-    # Recuperar detalhes de cada serviço
-    for servico in report.get('servicos', []):
-        servico_detalhes = services_collection.find_one({"_id": ObjectId(servico['servico_id'])})
-        if servico_detalhes:
-            paciente = patients_collection.find_one({"_id": servico_detalhes.get('paciente_id')})
-            funcionario = employees_collection.find_one({"_id": servico_detalhes.get('funcionario_id')})
-            report_data['servicos'].append({
-                'servico_id': str(servico_detalhes['_id']),
-                'tipo': servico_detalhes.get('tipo_servico'),
-                'preco': servico_detalhes.get('preco'),
-                'paciente': paciente['nome'] if paciente else None,
-                'funcionario': funcionario['nome'] if funcionario else None
-            })
-    
-    return jsonify(report_data), 200
+    for service_name, service_data in services_data.items():
+        report["services"].append({
+            "service_name": service_name,
+            "service_count": service_data["service_count"],
+            "price": service_data["price"],
+            "total_revenue": service_data["total_revenue"],
+            "total_commission": service_data["total_commission"]
+        })
 
-# # Rota para atualizar um relatório
-# @app.route('/reports/<report_id>', methods=['PUT'])
-# def update_report(report_id):
-    updated_data = request.get_json()
-    result = reports_collection.update_one({"_id": ObjectId(report_id)}, {"$set": updated_data})
-    if result.modified_count > 0:
-        return jsonify({"message": "Relatório atualizado com sucesso"}), 200
-    return jsonify({"error": "Relatório não encontrado"}), 404  
+    # Inserir o relatório na coleção de relatórios
+    try:
+        report["_id"] = employee_reports_collection.insert_one(report).inserted_id
+        return jsonify({"message": "Relatório de desempenho do funcionário criado com sucesso", "report_id": str(report["_id"])}), 200
+    except Exception as e:
+        return jsonify({"message": f"Erro ao criar relatório: {str(e)}"}), 500
 
+# Função auxiliar para formatar datas corretamente
+def format_date(date, include_time=False):
+    if isinstance(date, datetime):
+        if include_time:
+            return date.strftime('%d/%m/%Y - %H:%M')  # Formato completo com hora
+        else:
+            return date.strftime('%d/%m/%Y')  # Formato apenas de data
+    elif isinstance(date, str):  # Se for string, verificar o formato
+        try:
+            # Tenta converter de 'yyyy-mm-dd' ou 'yyyy-mm-ddT00:00:00' para datetime e depois formata
+            dt = datetime.strptime(date.split("T")[0], '%Y-%m-%d')
+            if include_time:
+                return dt.strftime('%d/%m/%Y - %H:%M')  # Formato completo com hora
+            else:
+                return dt.strftime('%d/%m/%Y')  # Formato apenas de data
+        except ValueError:
+            # Caso o formato não seja esperado, retornar None ou outro valor padrão
+            return None
+    return None  # Se for None ou um formato inesperado
+
+
+from bson import ObjectId
+
+# Função para converter ObjectId em string em um documento
+def convert_objectid_to_string(document):
+    """
+    Converte todos os campos ObjectId de um documento para string.
+    """
+    for key, value in document.items():
+        if isinstance(value, ObjectId):
+            document[key] = str(value)  # Converte ObjectId para string
+        elif isinstance(value, dict):  # Recursivamente verifica subdicionários
+            convert_objectid_to_string(value)
+    return document
+
+from bson import ObjectId
+
+# Função auxiliar para converter ObjectId e datas para string
+def convert_object_id_and_dates(report):
+    report['_id'] = str(report['_id'])
+    if 'employee_id' in report:
+        report['employee_id'] = str(report['employee_id'])
+    if 'data_geracao' in report:
+        report['data_geracao'] = report['data_geracao'].isoformat()
+    if 'employees' in report:
+        for employee in report['employees']:
+            employee['employee_id'] = str(employee['employee_id'])
+    return report
+
+@app.route('/get_all_employee_performance_reports', methods=['GET'])
+def get_all_employee_performance_reports():
+    try:
+        # Buscar todos os relatórios na coleção
+        reports = employee_reports_collection.find()
+
+        # Converter os relatórios para uma lista de dicionários
+        reports_list = []
+        for report in reports:
+            formatted_report = {
+                "_id": str(report["_id"]),
+                "employee_id": report["employee_id"],
+                "employee_name": report.get("employee_name"),
+                "start_date": report["start_date"],
+                "end_date": report["end_date"],
+                "data_geracao": report["data_geracao"],
+                "total_revenue": report["total_revenue"],
+                "total_commission": report["total_commission"],
+                "services": []
+            }
+
+            # Formatar os serviços (caso existam)
+            if "services" in report:
+                services_data = {}
+
+                # Processar cada serviço atribuído
+                for service in report["services"]:
+                    service_name = service["service_name"]
+                    price = service["price"]
+                    revenue = service["total_revenue"]
+                    commission = service["total_commission"]
+                    service_count = service["service_count"]
+
+                    # Verificar se o serviço já existe no dicionário de serviços
+                    if service_name in services_data:
+                        services_data[service_name]["service_count"] += service_count
+                        services_data[service_name]["total_revenue"] += revenue
+                        services_data[service_name]["total_commission"] += commission
+                    else:
+                        # Inicializar os dados do serviço
+                        services_data[service_name] = {
+                            "service_name": service_name,
+                            "service_count": service_count,
+                            "price": price,
+                            "total_revenue": revenue,
+                            "total_commission": commission
+                        }
+
+                # Adicionar os serviços formatados ao relatório
+                formatted_report["services"] = list(services_data.values())
+
+            # Adicionar o relatório formatado à lista final
+            reports_list.append(formatted_report)
+
+        # Retornar os relatórios como resposta JSON
+        return jsonify(reports_list), 200
+
+    except Exception as e:
+        return jsonify({"message": f"Erro ao obter os relatórios: {str(e)}"}), 500
+
+# Rota para obter o relatório de desempenho por ID
+@app.route('/get_employee_performance_report/<report_id>', methods=['GET'])
+def get_employee_performance_report(report_id):
+    # Buscar o relatório na coleção de relatórios pelo ID
+    try:
+        report = employee_reports_collection.find_one({"_id": ObjectId(report_id)})
+        
+        # Verificar se o relatório existe
+        if report is None:
+            return jsonify({"message": "Relatório não encontrado"}), 404
+        
+        # Converter o objeto ObjectId para string para retornar na resposta
+        report["_id"] = str(report["_id"])
+        
+        # Retornar o relatório encontrado
+        return jsonify(report), 200
+    except Exception as e:
+        return jsonify({"message": f"Erro ao obter relatório: {str(e)}"}), 500
+  
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000, debug=True)

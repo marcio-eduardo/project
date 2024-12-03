@@ -48,7 +48,7 @@ const formatToBrazilTime = (dateString: string | null | undefined) => {
   }
 };
 
-export function ReportPage() {
+export function ReportService() {
   const [reports, setReports] = useState<Report[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
 

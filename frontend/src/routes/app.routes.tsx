@@ -1,23 +1,22 @@
 import { NotLoggedInPage } from '@/auth/notLogged';
 import { SignInPage } from '@/auth/signInPage';
 import { SignUp } from '@/auth/signUp';
-import ReportForm from '@/components/reportForm';
 import { PrivateRoute } from '@/contexts/userContext';
 import { AppLayout } from '@/pages/_layouts/app';
 import { HomeLayout } from '@/pages/_layouts/home';
 import { AuthLayout } from '@/pages/_layouts/signIn';
-import { Dashboard } from '@/pages/app/dashboard';
 import { EmployeeList } from '@/pages/app/EmployeesPages/employeeList';
 import { EmployeeRegister } from '@/pages/app/EmployeesPages/employeeRegister';
 import { Homepage } from '@/pages/app/homepage';
 import { PatientsList } from '@/pages/app/PatientsPages/patienList';
 import { PatientRegister } from '@/pages/app/PatientsPages/patient-register';
-import { ReportPage } from '@/pages/app/ReportPages/reportPage';
-import { ReportSelect } from '@/pages/app/ReportPages/reportSelect';
+import { CreateReports } from '@/pages/app/ReportPages/createReports';
+import { ReportService } from '@/pages/app/ReportPages/reportService';
 import { AssignServiceForm } from '@/pages/app/ServicesPages/assignServiceForm';
 import { ServiceRegister } from '@/pages/app/ServicesPages/service-register';
 import ServiceDetails from '@/pages/app/ServicesPages/serviceDetails';
 import { ServicesList } from '@/pages/app/ServicesPages/services';
+
 
 
 import { createBrowserRouter } from 'react-router-dom';
@@ -46,13 +45,6 @@ export const AppRouter = createBrowserRouter([
         <AppLayout />
       </PrivateRoute>,       
     children: [
-      { 
-        path: 'dashboard', 
-        element:
-          <PrivateRoute>
-            <Dashboard />
-          </PrivateRoute>
-      },
       { 
         path: 'service-register', 
         element:
@@ -110,24 +102,17 @@ export const AppRouter = createBrowserRouter([
         </PrivateRoute> 
       },
       { 
-        path: 'report/:service_id', 
+        path: '/report-create', 
         element: 
         <PrivateRoute>
-          <ReportForm />
+          <CreateReports />
         </PrivateRoute> 
       },
       { 
-        path: '/report-select', 
+        path: '/report-create/report-services', 
         element: 
         <PrivateRoute>
-          <ReportSelect />
-        </PrivateRoute> 
-      },
-      { 
-        path: '/report', 
-        element: 
-        <PrivateRoute>
-          <ReportPage />
+          <ReportService />
         </PrivateRoute> 
       },
     ]

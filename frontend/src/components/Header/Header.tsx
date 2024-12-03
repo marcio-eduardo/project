@@ -100,9 +100,7 @@ export function Header() {
                 Cadastro
               </span>
               {isCadastroOpen && (
-                <div
-                  className="absolute top-8 left-0 bg-white text-black rounded-md shadow-lg w-48 z-10"
-                >
+                <div className="absolute top-8 left-0 bg-white text-black rounded-md shadow-lg w-48 z-10">
                   <ul className="space-y-2 p-2">
                     <li className="relative group">
                       <span className="block px-4 py-2 cursor-pointer hover:bg-gray-100"
@@ -143,8 +141,7 @@ export function Header() {
               {isServicosOpen && (
                 <div className="absolute top-8 left-0 bg-white text-black rounded-md shadow-lg w-48 z-10">
                   <ul className="space-y-2 p-2">
-                    <li><a href="/assign-service" className="block px-4 py-2 hover:bg-gray-100">Atendimento</a></li>
-                    <li><a href="/service-details/serviceId" className="block px-4 py-2 hover:bg-gray-100">Atendendo</a></li>
+                    <li><a href="/assign-service" className="block px-4 py-2 hover:bg-gray-100">Atendimentos</a></li>
                     <li><a href="/service-register" className="block px-4 py-2 hover:bg-gray-100">Novo Serviço</a></li>
                     <li><a href="/services" className="block px-4 py-2 hover:bg-gray-100">Lista de serviços</a></li>
                   </ul>
@@ -163,11 +160,13 @@ export function Header() {
               </span>
               {isRelatoriosOpen && (
                 <div className="absolute top-8 left-0 bg-white text-black rounded-md shadow-lg w-48 z-10">
-                  <ul className="space-y-2 p-2">
-                    <li><a href="/report-select" className="block px-4 py-2 hover:bg-gray-100">Criar Relatório</a></li>
-                    <li><a href="/report" className="block px-4 py-2 hover:bg-gray-100">Lista de Relatórios</a></li>
-                  </ul>
-                </div>
+                <ul className="space-y-2 p-2">
+                  <li><a href="/report-create" className="block px-4 py-2 hover:bg-gray-100">Criar Relatório</a></li>
+                  <li><a href="/report-create/report-services" className="block px-4 py-2 hover:bg-gray-100">Relatório de Serviços</a></li>
+                                                 
+                </ul>
+              </div>
+                // 
               )}
             </div>
           </div>
@@ -189,8 +188,8 @@ export function Header() {
             {isUserMenuOpen && (
               <div className="absolute top-12 right-0 bg-white text-black rounded-md shadow-lg w-48 z-10">
                 <ul className="space-y-2 p-2">
-                  <li><a href="#" className="block px-4 py-2 hover:bg-gray-100">Meu Perfil</a></li>
-                  <li><a className="block px-4 py-2 hover:bg-gray-100">Configurações</a></li>
+                  {/* <li><a href="#" className="block px-4 py-2 hover:bg-gray-100">Meu Perfil</a></li>
+                  <li><a className="block px-4 py-2 hover:bg-gray-100">Configurações</a></li> */}
                   <li><a onClick={handleLogout} href="#" className="block px-4 py-2 hover:bg-gray-100">Sair</a></li>
                 </ul>
               </div>

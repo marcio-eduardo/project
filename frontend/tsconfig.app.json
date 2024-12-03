@@ -29,5 +29,5 @@
     "noFallthroughCasesInSwitch": true,
     "noUncheckedSideEffectImports": true
   },
-  "include": ["src"]
+  "include": ["src", "../IGNORED/reportEmployee.tsx", "../IGNORED/controllers", "../IGNORED/reportGraph.tsx", "../IGNORED/reportForm.tsx", "../IGNORED/dashboard.tsx"]
 }

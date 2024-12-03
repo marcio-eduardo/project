@@ -1,7 +1,7 @@
-import React, { useState } from 'react';
 import { api } from "@/lib/axios";
-import { useNavigate } from 'react-router-dom';
+import React, { useState } from 'react';
 import { Helmet } from 'react-helmet-async';
+import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 
 interface FormData {
@@ -153,7 +153,7 @@ export function SignUp() {
           </form>
 
           <div className="text-center mt-4">
-            <p className="text-sm">Já tem uma conta? <a href="#" className="text-blue-500 hover:underline">Login</a></p>
+            <p className="text-sm">Já tem uma conta? <a href="/signin" className="text-blue-500 hover:underline">Login</a></p>
           </div>
         </div>
       </div>
